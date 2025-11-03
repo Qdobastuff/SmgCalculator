@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMG Survey Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 28px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .calculate-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .calculate-btn:active {
+            transform: translateY(0);
+        }
+
+        .results {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        .current-status {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .current-status h2 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .current-status .big-number {
+            font-size: 48px;
+            font-weight: bold;
+        }
+
+        .target-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px 20px;
+            margin-bottom: 12px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s;
+        }
+
+        .target-card:hover {
+            transform: translateX(5px);
+        }
+
+        .target-card.achieved {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+
+        .target-label {
+            font-weight: 600;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .target-result {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .target-card.achieved .target-result {
+            color: #28a745;
+        }
+
+        .error {
+            color: #f5576c;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⭐ SMG Survey Calculator</h1>
+        <p class="subtitle">Calculate how many 5-star surveys you need to reach your goals</p>
+
+        <div class="input-group">
+            <label for="surveyCount">Total Survey Count</label>
+            <input type="number" id="surveyCount" placeholder="e.g., 100" min="0" step="1">
+            <div class="error" id="countError">Please enter a valid survey count</div>
+        </div>
+
+        <div class="input-group">
+            <label for="currentPercent">Current Satisfaction Score (%)</label>
+            <input type="number" id="currentPercent" placeholder="e.g., 80" min="0" max="100" step="0.1">
+            <div class="error" id="percentError">Please enter a percentage between 0 and 100</div>
+        </div>
+
+        <button class="calculate-btn" onclick="calculate()">Calculate Targets</button>
+
+        <div class="results" id="results">
+            <div class="current-status">
+                <h2>Current Status</h2>
+                <div class="big-number" id="currentScore">--</div>
+                <p id="currentInfo">-- five-star surveys out of --</p>
+            </div>
+
+            <div id="targetsList"></div>
+        </div>
+    </div>
+
+    <script>
+        function calculate() {
+            const surveyCount = parseFloat(document.getElementById('surveyCount').value);
+            const currentPercent = parseFloat(document.getElementById('currentPercent').value);
+            
+            // Reset errors
+            document.getElementById('countError').classList.remove('show');
+            document.getElementById('percentError').classList.remove('show');
+            
+            // Validate inputs
+            let hasError = false;
+            
+            if (isNaN(surveyCount) || surveyCount < 0) {
+                document.getElementById('countError').classList.add('show');
+                hasError = true;
+            }
+            
+            if (isNaN(currentPercent) || currentPercent < 0 || currentPercent > 100) {
+                document.getElementById('percentError').classList.add('show');
+                hasError = true;
+            }
+            
+            if (hasError) return;
+            
+            // Calculate current 5-star count
+            const current5Stars = Math.round((currentPercent / 100) * surveyCount);
+            
+            // Update current status
+            document.getElementById('currentScore').textContent = currentPercent.toFixed(1) + '%';
+            document.getElementById('currentInfo').textContent = 
+                `${current5Stars} five-star surveys out of ${surveyCount}`;
+            
+            // Target percentages
+            const targets = [70, 76, 80, 85, 90];
+            const targetsList = document.getElementById('targetsList');
+            targetsList.innerHTML = '';
+            
+            targets.forEach(target => {
+                const card = document.createElement('div');
+                card.className = 'target-card';
+                
+                if (currentPercent >= target) {
+                    card.classList.add('achieved');
+                    card.innerHTML = `
+                        <span class="target-label">${target}%</span>
+                        <span class="target-result">✓ Achieved!</span>
+                    `;
+                } else {
+                    // Calculate needed surveys
+                    // Formula: (current5Stars + needed) / (surveyCount + needed) = target/100
+                    // Solving: needed = (target * surveyCount - 100 * current5Stars) / (100 - target)
+                    const needed = Math.ceil((target * surveyCount - 100 * current5Stars) / (100 - target));
+                    
+                    card.innerHTML = `
+                        <span class="target-label">${target}%</span>
+                        <span class="target-result">${needed > 0 ? needed : 0} more needed</span>
+                    `;
+                }
+                
+                targetsList.appendChild(card);
+            });
+            
+            document.getElementById('results').classList.add('show');
+        }
+
+        // Allow Enter key to calculate
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                calculate();
+            }
+        });
+    </script>
+</body>
+</html>
