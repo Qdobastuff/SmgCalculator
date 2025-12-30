@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMG Survey Calculator</title>
+    <title>SMG Score Calculator</title>
     <style>
         * {
             margin: 0;
@@ -26,7 +26,7 @@
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             padding: 40px;
-            max-width: 600px;
+            max-width: 700px;
             width: 100%;
         }
 
@@ -121,6 +121,60 @@
             font-weight: bold;
         }
 
+        .b2b-status {
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .b2b-status.green {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .b2b-status.yellow {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+        }
+
+        .b2b-status.red {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+
+        .b2b-status h2 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .b2b-status .big-number {
+            font-size: 48px;
+            font-weight: bold;
+        }
+
+        .survey-info {
+            text-align: center;
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .survey-info strong {
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .section-title {
+            color: #333;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
         .target-card {
             background: #f8f9fa;
             border-left: 4px solid #667eea;
@@ -145,13 +199,13 @@
         .target-label {
             font-weight: 600;
             color: #333;
-            font-size: 18px;
+            font-size: 16px;
         }
 
         .target-result {
             font-weight: bold;
             color: #667eea;
-            font-size: 18px;
+            font-size: 16px;
         }
 
         .target-card.achieved .target-result {
@@ -168,12 +222,16 @@
         .error.show {
             display: block;
         }
+
+        .b2b-targets {
+            margin-top: 25px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>⭐ SMG Survey Calculator</h1>
-        <p class="subtitle">Calculate how many 5-star surveys you need to reach your goals</p>
+        <h1>⭐ SMG Score Calculator</h1>
+        <p class="subtitle">Calculate your satisfaction targets and B2B goals</p>
 
         <div class="input-group">
             <label for="surveyCount">Total Survey Count</label>
@@ -187,16 +245,38 @@
             <div class="error" id="percentError">Please enter a percentage between 0 and 100</div>
         </div>
 
+        <div class="input-group">
+            <label for="b2bPercent">B2B Score (%)</label>
+            <input type="number" id="b2bPercent" placeholder="e.g., 3.5" min="0" max="100" step="0.1">
+            <div class="error" id="b2bError">Please enter a valid B2B percentage</div>
+        </div>
+
         <button class="calculate-btn" onclick="calculate()">Calculate Targets</button>
 
         <div class="results" id="results">
             <div class="current-status">
-                <h2>Current Status</h2>
+                <h2>Overall Satisfaction</h2>
                 <div class="big-number" id="currentScore">--</div>
                 <p id="currentInfo">-- five-star surveys out of --</p>
             </div>
 
+            <div class="b2b-status" id="b2bStatus">
+                <h2>B2B Score</h2>
+                <div class="big-number" id="b2bScore">--</div>
+                <p id="b2bZone">--</p>
+            </div>
+
+            <div class="survey-info">
+                Total Surveys: <strong id="totalSurveys">--</strong>
+            </div>
+
+            <div class="section-title">5-Star Surveys Needed to Reach:</div>
             <div id="targetsList"></div>
+
+            <div class="b2b-targets">
+                <div class="section-title">B2B Targets:</div>
+                <div id="b2bTargetsList"></div>
+            </div>
         </div>
     </div>
 
@@ -204,10 +284,12 @@
         function calculate() {
             const surveyCount = parseFloat(document.getElementById('surveyCount').value);
             const currentPercent = parseFloat(document.getElementById('currentPercent').value);
+            const b2bPercent = parseFloat(document.getElementById('b2bPercent').value);
             
             // Reset errors
             document.getElementById('countError').classList.remove('show');
             document.getElementById('percentError').classList.remove('show');
+            document.getElementById('b2bError').classList.remove('show');
             
             // Validate inputs
             let hasError = false;
@@ -222,17 +304,46 @@
                 hasError = true;
             }
             
+            if (isNaN(b2bPercent) || b2bPercent < 0 || b2bPercent > 100) {
+                document.getElementById('b2bError').classList.add('show');
+                hasError = true;
+            }
+            
             if (hasError) return;
             
             // Calculate current 5-star count
             const current5Stars = Math.round((currentPercent / 100) * surveyCount);
+            const currentB2BCount = Math.round((b2bPercent / 100) * surveyCount);
             
             // Update current status
             document.getElementById('currentScore').textContent = currentPercent.toFixed(1) + '%';
             document.getElementById('currentInfo').textContent = 
                 `${current5Stars} five-star surveys out of ${surveyCount}`;
             
-            // Target percentages
+            // Update B2B status
+            const b2bStatusEl = document.getElementById('b2bStatus');
+            const b2bScoreEl = document.getElementById('b2bScore');
+            const b2bZoneEl = document.getElementById('b2bZone');
+            
+            b2bScoreEl.textContent = b2bPercent.toFixed(1) + '%';
+            
+            // Remove all zone classes
+            b2bStatusEl.classList.remove('green', 'yellow', 'red');
+            
+            if (b2bPercent < 5) {
+                b2bStatusEl.classList.add('green');
+                b2bZoneEl.textContent = '✅ Money Zone - Under 5%';
+            } else if (b2bPercent >= 5 && b2bPercent <= 10) {
+                b2bStatusEl.classList.add('yellow');
+                b2bZoneEl.textContent = '⚠️ Safe Zone - 5-10%';
+            } else {
+                b2bStatusEl.classList.add('red');
+                b2bZoneEl.textContent = '❌ Red Zone - Above 10% (Bonus Deduction)';
+            }
+            
+            document.getElementById('totalSurveys').textContent = surveyCount;
+            
+            // Target percentages for satisfaction
             const targets = [70, 76, 80, 85, 90];
             const targetsList = document.getElementById('targetsList');
             targetsList.innerHTML = '';
@@ -248,9 +359,6 @@
                         <span class="target-result">✓ Achieved!</span>
                     `;
                 } else {
-                    // Calculate needed surveys
-                    // Formula: (current5Stars + needed) / (surveyCount + needed) = target/100
-                    // Solving: needed = (target * surveyCount - 100 * current5Stars) / (100 - target)
                     const needed = Math.ceil((target * surveyCount - 100 * current5Stars) / (100 - target));
                     
                     card.innerHTML = `
@@ -261,6 +369,91 @@
                 
                 targetsList.appendChild(card);
             });
+            
+            // B2B Targets
+            const b2bTargetsList = document.getElementById('b2bTargetsList');
+            b2bTargetsList.innerHTML = '';
+            
+            if (b2bPercent < 5) {
+                // Currently in Green Zone
+                const b2bToHit5 = Math.ceil((0.05 * surveyCount - currentB2BCount) / 0.95);
+                
+                const card1 = document.createElement('div');
+                card1.className = 'target-card achieved';
+                card1.innerHTML = `
+                    <span class="target-label">Stay Green (&lt;5%)</span>
+                    <span class="target-result">✓ Current</span>
+                `;
+                b2bTargetsList.appendChild(card1);
+                
+                if (b2bToHit5 > 0) {
+                    const card2 = document.createElement('div');
+                    card2.className = 'target-card';
+                    card2.innerHTML = `
+                        <span class="target-label">Hit Yellow (5%)</span>
+                        <span class="target-result">${b2bToHit5} more B2B</span>
+                    `;
+                    b2bTargetsList.appendChild(card2);
+                }
+            } else if (b2bPercent >= 5 && b2bPercent < 10) {
+                // Currently in Yellow Zone
+                const goodSurveysTo5 = Math.ceil((currentB2BCount - 0.05 * surveyCount) / 0.05);
+                const b2bToHit10 = Math.ceil((0.10 * surveyCount - currentB2BCount) / 0.90);
+                
+                const card1 = document.createElement('div');
+                card1.className = 'target-card';
+                card1.innerHTML = `
+                    <span class="target-label">Get to Green (&lt;5%)</span>
+                    <span class="target-result">${goodSurveysTo5 > 0 ? goodSurveysTo5 : 0} good surveys</span>
+                `;
+                b2bTargetsList.appendChild(card1);
+                
+                const card2 = document.createElement('div');
+                card2.className = 'target-card achieved';
+                card2.innerHTML = `
+                    <span class="target-label">Stay Yellow (5-10%)</span>
+                    <span class="target-result">✓ Current</span>
+                `;
+                b2bTargetsList.appendChild(card2);
+                
+                if (b2bToHit10 > 0) {
+                    const card3 = document.createElement('div');
+                    card3.className = 'target-card';
+                    card3.innerHTML = `
+                        <span class="target-label">Hit Red (10%)</span>
+                        <span class="target-result">${b2bToHit10} more B2B</span>
+                    `;
+                    b2bTargetsList.appendChild(card3);
+                }
+            } else {
+                // Currently in Red Zone
+                const goodSurveysTo10 = Math.ceil((currentB2BCount - 0.10 * surveyCount) / 0.10);
+                const goodSurveysTo5 = Math.ceil((currentB2BCount - 0.05 * surveyCount) / 0.05);
+                
+                const card1 = document.createElement('div');
+                card1.className = 'target-card';
+                card1.innerHTML = `
+                    <span class="target-label">Get to Yellow (&lt;10%)</span>
+                    <span class="target-result">${goodSurveysTo10 > 0 ? goodSurveysTo10 : 0} good surveys</span>
+                `;
+                b2bTargetsList.appendChild(card1);
+                
+                const card2 = document.createElement('div');
+                card2.className = 'target-card';
+                card2.innerHTML = `
+                    <span class="target-label">Get to Green (&lt;5%)</span>
+                    <span class="target-result">${goodSurveysTo5 > 0 ? goodSurveysTo5 : 0} good surveys</span>
+                `;
+                b2bTargetsList.appendChild(card2);
+                
+                const card3 = document.createElement('div');
+                card3.className = 'target-card';
+                card3.innerHTML = `
+                    <span class="target-label">Currently Red (&gt;10%)</span>
+                    <span class="target-result">⚠️ Bonus deduction</span>
+                `;
+                b2bTargetsList.appendChild(card3);
+            }
             
             document.getElementById('results').classList.add('show');
         }
