@@ -103,12 +103,28 @@
         }
 
         .current-status {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             color: white;
             padding: 20px;
             border-radius: 15px;
             margin-bottom: 20px;
             text-align: center;
+        }
+
+        .current-status.green {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .current-status.yellow {
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+        }
+
+        .current-status.red {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+
+        .current-status.black {
+            background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%);
+            color: #ff4444;
         }
 
         .current-status h2 {
@@ -254,7 +270,7 @@
         <button class="calculate-btn" onclick="calculate()">Calculate Targets</button>
 
         <div class="results" id="results">
-            <div class="current-status">
+            <div class="current-status" id="currentStatus">
                 <h2>Overall Satisfaction</h2>
                 <div class="big-number" id="currentScore">--</div>
                 <p id="currentInfo">-- five-star surveys out of --</p>
@@ -314,6 +330,20 @@
             // Calculate current 5-star count
             const current5Stars = Math.round((currentPercent / 100) * surveyCount);
             const currentB2BCount = Math.round((b2bPercent / 100) * surveyCount);
+            
+            // Determine satisfaction score color
+            const currentStatusEl = document.getElementById('currentStatus');
+            currentStatusEl.classList.remove('green', 'yellow', 'red', 'black');
+            
+            if (currentPercent >= 80) {
+                currentStatusEl.classList.add('green');
+            } else if (currentPercent >= 75 && currentPercent < 80) {
+                currentStatusEl.classList.add('yellow');
+            } else if (currentPercent >= 70 && currentPercent < 75) {
+                currentStatusEl.classList.add('red');
+            } else {
+                currentStatusEl.classList.add('black');
+            }
             
             // Update current status
             document.getElementById('currentScore').textContent = currentPercent.toFixed(1) + '%';
@@ -395,10 +425,10 @@
                     `;
                     b2bTargetsList.appendChild(card2);
                 }
-            } else if (b2bPercent >= 5 && b2bPercent < 10) {
-                // Currently in Yellow Zone
+            } else if (b2bPercent >= 5 && b2bPercent < 7.5) {
+                // Currently in Yellow Zone but under 7.5%
                 const goodSurveysTo5 = Math.ceil((currentB2BCount - 0.05 * surveyCount) / 0.05);
-                const b2bToHit10 = Math.ceil((0.10 * surveyCount - currentB2BCount) / 0.90);
+                const b2bToHit75 = Math.ceil((0.075 * surveyCount - currentB2BCount) / 0.925);
                 
                 const card1 = document.createElement('div');
                 card1.className = 'target-card';
@@ -411,23 +441,63 @@
                 const card2 = document.createElement('div');
                 card2.className = 'target-card achieved';
                 card2.innerHTML = `
-                    <span class="target-label">Stay Yellow (5-10%)</span>
+                    <span class="target-label">Stay Under 7.5%</span>
                     <span class="target-result">✓ Current</span>
                 `;
                 b2bTargetsList.appendChild(card2);
                 
-                if (b2bToHit10 > 0) {
+                if (b2bToHit75 > 0) {
                     const card3 = document.createElement('div');
                     card3.className = 'target-card';
                     card3.innerHTML = `
+                        <span class="target-label">Hit 7.5%</span>
+                        <span class="target-result">${b2bToHit75} more B2B</span>
+                    `;
+                    b2bTargetsList.appendChild(card3);
+                }
+            } else if (b2bPercent >= 7.5 && b2bPercent < 10) {
+                // Currently in Yellow Zone above 7.5%
+                const goodSurveysTo5 = Math.ceil((currentB2BCount - 0.05 * surveyCount) / 0.05);
+                const goodSurveysTo75 = Math.ceil((currentB2BCount - 0.075 * surveyCount) / 0.075);
+                const b2bToHit10 = Math.ceil((0.10 * surveyCount - currentB2BCount) / 0.90);
+                
+                const card1 = document.createElement('div');
+                card1.className = 'target-card';
+                card1.innerHTML = `
+                    <span class="target-label">Get to Green (&lt;5%)</span>
+                    <span class="target-result">${goodSurveysTo5 > 0 ? goodSurveysTo5 : 0} good surveys</span>
+                `;
+                b2bTargetsList.appendChild(card1);
+                
+                const card2 = document.createElement('div');
+                card2.className = 'target-card';
+                card2.innerHTML = `
+                    <span class="target-label">Get Under 7.5%</span>
+                    <span class="target-result">${goodSurveysTo75 > 0 ? goodSurveysTo75 : 0} good surveys</span>
+                `;
+                b2bTargetsList.appendChild(card2);
+                
+                const card3 = document.createElement('div');
+                card3.className = 'target-card achieved';
+                card3.innerHTML = `
+                    <span class="target-label">Stay Yellow (5-10%)</span>
+                    <span class="target-result">✓ Current</span>
+                `;
+                b2bTargetsList.appendChild(card3);
+                
+                if (b2bToHit10 > 0) {
+                    const card4 = document.createElement('div');
+                    card4.className = 'target-card';
+                    card4.innerHTML = `
                         <span class="target-label">Hit Red (10%)</span>
                         <span class="target-result">${b2bToHit10} more B2B</span>
                     `;
-                    b2bTargetsList.appendChild(card3);
+                    b2bTargetsList.appendChild(card4);
                 }
             } else {
                 // Currently in Red Zone
                 const goodSurveysTo10 = Math.ceil((currentB2BCount - 0.10 * surveyCount) / 0.10);
+                const goodSurveysTo75 = Math.ceil((currentB2BCount - 0.075 * surveyCount) / 0.075);
                 const goodSurveysTo5 = Math.ceil((currentB2BCount - 0.05 * surveyCount) / 0.05);
                 
                 const card1 = document.createElement('div');
@@ -441,18 +511,26 @@
                 const card2 = document.createElement('div');
                 card2.className = 'target-card';
                 card2.innerHTML = `
-                    <span class="target-label">Get to Green (&lt;5%)</span>
-                    <span class="target-result">${goodSurveysTo5 > 0 ? goodSurveysTo5 : 0} good surveys</span>
+                    <span class="target-label">Get Under 7.5%</span>
+                    <span class="target-result">${goodSurveysTo75 > 0 ? goodSurveysTo75 : 0} good surveys</span>
                 `;
                 b2bTargetsList.appendChild(card2);
                 
                 const card3 = document.createElement('div');
                 card3.className = 'target-card';
                 card3.innerHTML = `
+                    <span class="target-label">Get to Green (&lt;5%)</span>
+                    <span class="target-result">${goodSurveysTo5 > 0 ? goodSurveysTo5 : 0} good surveys</span>
+                `;
+                b2bTargetsList.appendChild(card3);
+                
+                const card4 = document.createElement('div');
+                card4.className = 'target-card';
+                card4.innerHTML = `
                     <span class="target-label">Currently Red (&gt;10%)</span>
                     <span class="target-result">⚠️ Bonus deduction</span>
                 `;
-                b2bTargetsList.appendChild(card3);
+                b2bTargetsList.appendChild(card4);
             }
             
             document.getElementById('results').classList.add('show');
