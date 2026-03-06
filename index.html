@@ -157,6 +157,11 @@
             background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
         }
 
+        .b2b-status.black {
+            background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%);
+            color: #ff4444;
+        }
+
         .b2b-status h2 {
             font-size: 18px;
             margin-bottom: 5px;
@@ -274,12 +279,14 @@
                 <h2>Overall Satisfaction</h2>
                 <div class="big-number" id="currentScore">--</div>
                 <p id="currentInfo">-- five-star surveys out of --</p>
+                <p id="satisfactionImpact" style="margin-top:8px; font-size:15px; font-weight:700; opacity:0.95;">--</p>
             </div>
 
             <div class="b2b-status" id="b2bStatus">
                 <h2>B2B Score</h2>
                 <div class="big-number" id="b2bScore">--</div>
                 <p id="b2bZone">--</p>
+                <p id="b2bImpact" style="margin-top:8px; font-size:15px; font-weight:700; opacity:0.95;">--</p>
             </div>
 
             <div class="survey-info">
@@ -335,20 +342,31 @@
             const currentStatusEl = document.getElementById('currentStatus');
             currentStatusEl.classList.remove('green', 'yellow', 'red', 'black');
             
-            if (currentPercent >= 80) {
+            if (currentPercent >= 85) {
                 currentStatusEl.classList.add('green');
             } else if (currentPercent >= 75 && currentPercent < 80) {
-                currentStatusEl.classList.add('yellow');
-            } else if (currentPercent >= 70 && currentPercent < 75) {
                 currentStatusEl.classList.add('red');
-            } else {
+            } else if (currentPercent < 75) {
                 currentStatusEl.classList.add('black');
+            } else {
+                // 80-84.9% - no explicit zone defined, use yellow as neutral
+                currentStatusEl.classList.add('yellow');
             }
             
             // Update current status
             document.getElementById('currentScore').textContent = currentPercent.toFixed(1) + '%';
             document.getElementById('currentInfo').textContent = 
                 `${current5Stars} five-star surveys out of ${surveyCount}`;
+            
+            // Satisfaction impact label
+            const satImpact = document.getElementById('satisfactionImpact');
+            if (currentPercent >= 85) {
+                satImpact.textContent = '💰 +1% Net Profit Bonus';
+            } else if (currentPercent >= 75) {
+                satImpact.textContent = '➡️ Safe — No Impact on Net Profit';
+            } else {
+                satImpact.textContent = '📉 -1% Net Profit';
+            }
             
             // Update B2B status
             const b2bStatusEl = document.getElementById('b2bStatus');
@@ -358,23 +376,30 @@
             b2bScoreEl.textContent = b2bPercent.toFixed(1) + '%';
             
             // Remove all zone classes
-            b2bStatusEl.classList.remove('green', 'yellow', 'red');
+            b2bStatusEl.classList.remove('green', 'yellow', 'red', 'black');
             
-            if (b2bPercent < 5) {
+            if (b2bPercent < 3) {
                 b2bStatusEl.classList.add('green');
-                b2bZoneEl.textContent = '✅ Money Zone - Under 5%';
-            } else if (b2bPercent >= 5 && b2bPercent <= 10) {
+                b2bZoneEl.textContent = '✅ Money Zone - Under 3%';
+                document.getElementById('b2bImpact').textContent = '💰 +$250 USD Bonus';
+            } else if (b2bPercent >= 3 && b2bPercent < 5) {
                 b2bStatusEl.classList.add('yellow');
-                b2bZoneEl.textContent = '⚠️ Safe Zone - 5-10%';
-            } else {
+                b2bZoneEl.textContent = '✅ Safe Zone - 3–5%';
+                document.getElementById('b2bImpact').textContent = '➡️ Safe — No Dollar Impact';
+            } else if (b2bPercent >= 5 && b2bPercent < 7) {
                 b2bStatusEl.classList.add('red');
-                b2bZoneEl.textContent = '❌ Red Zone - Above 10% (Bonus Deduction)';
+                b2bZoneEl.textContent = '⚠️ Outlier Call Territory - 5–7% (Red)';
+                document.getElementById('b2bImpact').textContent = '⚠️ Safe — No Dollar Impact (Outlier Call Required)';
+            } else {
+                b2bStatusEl.classList.add('black');
+                b2bZoneEl.textContent = '❌ Costs You Money - Above 7% (Bonus Deduction)';
+                document.getElementById('b2bImpact').textContent = '📉 -$250 USD Deduction';
             }
             
             document.getElementById('totalSurveys').textContent = surveyCount;
             
             // Target percentages for satisfaction
-            const targets = [70, 76, 80, 85, 90];
+            const targets = [75, 80, 85, 90];
             const targetsList = document.getElementById('targetsList');
             targetsList.innerHTML = '';
             
@@ -404,131 +429,132 @@
             const b2bTargetsList = document.getElementById('b2bTargetsList');
             b2bTargetsList.innerHTML = '';
             
-            if (b2bPercent < 5) {
-                // Currently in Green Zone
-                const b2bToHit5 = Math.ceil((0.05 * surveyCount - currentB2BCount) / 0.95);
+            if (b2bPercent < 3) {
+                // Currently in Green/Money Zone
+                const b2bToHit3 = Math.ceil((0.03 * surveyCount - currentB2BCount) / 0.97);
                 
                 const card1 = document.createElement('div');
                 card1.className = 'target-card achieved';
                 card1.innerHTML = `
-                    <span class="target-label">Stay Green (&lt;5%)</span>
+                    <span class="target-label">✅ Money Zone (&lt;3%)</span>
                     <span class="target-result">✓ Current</span>
                 `;
                 b2bTargetsList.appendChild(card1);
                 
-                if (b2bToHit5 > 0) {
+                if (b2bToHit3 > 0) {
                     const card2 = document.createElement('div');
                     card2.className = 'target-card';
                     card2.innerHTML = `
-                        <span class="target-label">Hit Yellow (5%)</span>
-                        <span class="target-result">${b2bToHit5} more B2B</span>
+                        <span class="target-label">Hit Safe Zone (3%)</span>
+                        <span class="target-result">${b2bToHit3} more B2B surveys</span>
                     `;
                     b2bTargetsList.appendChild(card2);
                 }
-            } else if (b2bPercent >= 5 && b2bPercent < 7.5) {
-                // Currently in Yellow Zone but under 7.5%
-                const goodSurveysTo5 = Math.ceil((currentB2BCount - 0.05 * surveyCount) / 0.05);
-                const b2bToHit75 = Math.ceil((0.075 * surveyCount - currentB2BCount) / 0.925);
+            } else if (b2bPercent >= 3 && b2bPercent < 5) {
+                // Currently in Safe Zone (3–5%)
+                const goodSurveysTo3 = Math.ceil((currentB2BCount - 0.03 * surveyCount) / 0.03);
+                const b2bToHit5 = Math.ceil((0.05 * surveyCount - currentB2BCount) / 0.95);
                 
                 const card1 = document.createElement('div');
                 card1.className = 'target-card';
                 card1.innerHTML = `
-                    <span class="target-label">Get to Green (&lt;5%)</span>
-                    <span class="target-result">${goodSurveysTo5 > 0 ? goodSurveysTo5 : 0} good surveys</span>
+                    <span class="target-label">Get to Money Zone (&lt;3%)</span>
+                    <span class="target-result">${goodSurveysTo3 > 0 ? goodSurveysTo3 : 0} good surveys needed</span>
                 `;
                 b2bTargetsList.appendChild(card1);
                 
                 const card2 = document.createElement('div');
                 card2.className = 'target-card achieved';
                 card2.innerHTML = `
-                    <span class="target-label">Stay Under 7.5%</span>
+                    <span class="target-label">✅ Safe Zone (3–5%)</span>
                     <span class="target-result">✓ Current</span>
                 `;
                 b2bTargetsList.appendChild(card2);
                 
-                if (b2bToHit75 > 0) {
+                if (b2bToHit5 > 0) {
                     const card3 = document.createElement('div');
                     card3.className = 'target-card';
                     card3.innerHTML = `
-                        <span class="target-label">Hit 7.5%</span>
-                        <span class="target-result">${b2bToHit75} more B2B</span>
+                        <span class="target-label">Hit Outlier Zone (5%)</span>
+                        <span class="target-result">${b2bToHit5} more B2B surveys</span>
                     `;
                     b2bTargetsList.appendChild(card3);
                 }
-            } else if (b2bPercent >= 7.5 && b2bPercent < 10) {
-                // Currently in Yellow Zone above 7.5%
+            } else if (b2bPercent >= 5 && b2bPercent < 7) {
+                // Currently in Red/Outlier Zone (5–7%)
                 const goodSurveysTo5 = Math.ceil((currentB2BCount - 0.05 * surveyCount) / 0.05);
-                const goodSurveysTo75 = Math.ceil((currentB2BCount - 0.075 * surveyCount) / 0.075);
-                const b2bToHit10 = Math.ceil((0.10 * surveyCount - currentB2BCount) / 0.90);
+                const goodSurveysTo3 = Math.ceil((currentB2BCount - 0.03 * surveyCount) / 0.03);
+                const b2bToHit7 = Math.ceil((0.07 * surveyCount - currentB2BCount) / 0.93);
                 
                 const card1 = document.createElement('div');
                 card1.className = 'target-card';
                 card1.innerHTML = `
-                    <span class="target-label">Get to Green (&lt;5%)</span>
-                    <span class="target-result">${goodSurveysTo5 > 0 ? goodSurveysTo5 : 0} good surveys</span>
+                    <span class="target-label">Get to Money Zone (&lt;3%)</span>
+                    <span class="target-result">${goodSurveysTo3 > 0 ? goodSurveysTo3 : 0} good surveys needed</span>
                 `;
                 b2bTargetsList.appendChild(card1);
                 
                 const card2 = document.createElement('div');
                 card2.className = 'target-card';
                 card2.innerHTML = `
-                    <span class="target-label">Get Under 7.5%</span>
-                    <span class="target-result">${goodSurveysTo75 > 0 ? goodSurveysTo75 : 0} good surveys</span>
+                    <span class="target-label">Get to Safe Zone (&lt;5%)</span>
+                    <span class="target-result">${goodSurveysTo5 > 0 ? goodSurveysTo5 : 0} good surveys needed</span>
                 `;
                 b2bTargetsList.appendChild(card2);
                 
                 const card3 = document.createElement('div');
                 card3.className = 'target-card achieved';
                 card3.innerHTML = `
-                    <span class="target-label">Stay Yellow (5-10%)</span>
+                    <span class="target-label">⚠️ Outlier Call Territory (5–7%)</span>
                     <span class="target-result">✓ Current</span>
                 `;
                 b2bTargetsList.appendChild(card3);
                 
-                if (b2bToHit10 > 0) {
+                if (b2bToHit7 > 0) {
                     const card4 = document.createElement('div');
                     card4.className = 'target-card';
                     card4.innerHTML = `
-                        <span class="target-label">Hit Red (10%)</span>
-                        <span class="target-result">${b2bToHit10} more B2B</span>
+                        <span class="target-label">Hit Costs-You-Money Zone (7%)</span>
+                        <span class="target-result">${b2bToHit7} more B2B surveys</span>
                     `;
                     b2bTargetsList.appendChild(card4);
                 }
             } else {
-                // Currently in Red Zone
-                const goodSurveysTo10 = Math.ceil((currentB2BCount - 0.10 * surveyCount) / 0.10);
-                const goodSurveysTo75 = Math.ceil((currentB2BCount - 0.075 * surveyCount) / 0.075);
+                // Currently in Black/Costs-You-Money Zone (7%+)
+                const goodSurveysTo7 = Math.ceil((currentB2BCount - 0.07 * surveyCount) / 0.07);
                 const goodSurveysTo5 = Math.ceil((currentB2BCount - 0.05 * surveyCount) / 0.05);
+                const goodSurveysTo3 = Math.ceil((currentB2BCount - 0.03 * surveyCount) / 0.03);
                 
                 const card1 = document.createElement('div');
                 card1.className = 'target-card';
                 card1.innerHTML = `
-                    <span class="target-label">Get to Yellow (&lt;10%)</span>
-                    <span class="target-result">${goodSurveysTo10 > 0 ? goodSurveysTo10 : 0} good surveys</span>
+                    <span class="target-label">Get to Money Zone (&lt;3%)</span>
+                    <span class="target-result">${goodSurveysTo3 > 0 ? goodSurveysTo3 : 0} good surveys needed</span>
                 `;
                 b2bTargetsList.appendChild(card1);
                 
                 const card2 = document.createElement('div');
                 card2.className = 'target-card';
                 card2.innerHTML = `
-                    <span class="target-label">Get Under 7.5%</span>
-                    <span class="target-result">${goodSurveysTo75 > 0 ? goodSurveysTo75 : 0} good surveys</span>
+                    <span class="target-label">Get to Safe Zone (&lt;5%)</span>
+                    <span class="target-result">${goodSurveysTo5 > 0 ? goodSurveysTo5 : 0} good surveys needed</span>
                 `;
                 b2bTargetsList.appendChild(card2);
                 
                 const card3 = document.createElement('div');
                 card3.className = 'target-card';
                 card3.innerHTML = `
-                    <span class="target-label">Get to Green (&lt;5%)</span>
-                    <span class="target-result">${goodSurveysTo5 > 0 ? goodSurveysTo5 : 0} good surveys</span>
+                    <span class="target-label">Get Out of Outlier Zone (&lt;7%)</span>
+                    <span class="target-result">${goodSurveysTo7 > 0 ? goodSurveysTo7 : 0} good surveys needed</span>
                 `;
                 b2bTargetsList.appendChild(card3);
                 
                 const card4 = document.createElement('div');
                 card4.className = 'target-card';
+                card4.style.borderLeftColor = '#dc3545';
                 card4.innerHTML = `
-                    <span class="target-label">Currently Red (&gt;10%)</span>
-                    <span class="target-result">⚠️ Bonus deduction</span>
+                    <span class="target-label">❌ Costs You Money (&gt;7%)</span>
+                    <span class="target-result" style="color:#dc3545;">⚠️ Bonus deduction</span>
                 `;
                 b2bTargetsList.appendChild(card4);
             }
